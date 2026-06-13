@@ -438,9 +438,10 @@ function processPayment() {
       amount: 27.00,
       currency: 'USD',
       product: 'Bloom Digital Planner — Complete Edition',
-      cardType: cardTypeLabel,
-      cardMasked: maskedCard,
-      cardHolder: cardName.value.trim(),
+      card_type: cardTypeLabel,
+      card_masked: maskedCard,
+      card_holder: cardName.value.trim(),
+      notes: '',
       status: 'completed',
     };
 

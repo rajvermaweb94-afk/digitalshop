@@ -50,10 +50,10 @@ async function loadSettings() {
     if (!error && data) {
       adminPassword = data.value;
     } else {
-      adminPassword = 'bloom2025'; // fallback if table not set up yet
+      adminPassword = 'admin@123'; // fallback password
     }
   } catch {
-    adminPassword = 'bloom2025';
+    adminPassword = 'admin@123';
   }
 }
 
@@ -154,7 +154,8 @@ $('login-form').addEventListener('submit', e => {
     $('admin-password').focus();
     $('admin-password').style.borderColor = 'var(--red)';
     setTimeout(() => { $('admin-password').style.borderColor = ''; }, 1600);
-}
+  }
+});
 
 /* ─── BOOT ───────────────────────────────────────────────── */
 async function bootAdmin() {
@@ -307,64 +308,6 @@ async function seedDemoData() {
     await saveOrderToSupabase(demo);
   }
   await loadOrders();
-  refreshAllPages();
-  showToast(`✅ 12 demo orders added!`, 'success');
-}
-
-function refreshAllPages() {
-  renderDashboard();
-  applySortFilter();
-  renderOrdersTable();
-  renderCustomersPage();
-  renderAnalyticsPage();
-  $('sidebar-order-count').textContent = allOrders.length;
-  updateStorageInfo();
-}
-
-function refreshAllPages() {
-  renderDashboard();
-  applySortFilter();
-  renderOrdersTable();
-  renderCustomersPage();
-  renderAnalyticsPage();
-  $('sidebar-order-count').textContent = allOrders.length;
-  updateStorageInfo();
-}
-
-/* ─── CROSS-TAB SYNC (disabled for Supabase) ─────────────────── */
-function initCrossTabSync() {
-  // Not needed with Supabase - use real-time subscriptions if desired
-}
-
-/* ─── SEED DEMO DATA ─────────────────────────────────────── */
-function seedDemoData() {
-  const names    = ['Sarah Johnson','Marcus Williams','Priya Patel','Emily Chen','Jordan Kim','Aisha Thompson','Noah Davis','Sophia Martinez','Liam Wilson','Ava Brown','James Lee','Mia Garcia'];
-  const emails   = ['sarah.j@gmail.com','marcus.w@outlook.com','priya.p@gmail.com','emily.c@icloud.com','jordan.k@yahoo.com','aisha.t@gmail.com','noah.d@hotmail.com','sophia.m@gmail.com','liam.w@outlook.com','ava.b@gmail.com','james.l@icloud.com','mia.g@yahoo.com'];
-  const cards    = ['Visa','Mastercard','Visa','Visa','Mastercard','Visa','Mastercard','Visa','Visa','Mastercard','Visa','Mastercard'];
-  const countries= ['US','US','IN','CA','US','US','GB','US','AU','US','US','CA'];
-  const chars    = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  const now      = Date.now();
-
-  const demos = names.map((name, i) => {
-    const daysAgo = Math.floor(Math.random() * 14);
-    const d = new Date(now - daysAgo * 86400000 - Math.floor(Math.random() * 86400000));
-    let oid = 'BP-'; for(let k=0;k<8;k++) oid += chars[Math.floor(Math.random()*chars.length)];
-    const last4 = Math.floor(Math.random()*8000+1000);
-    return {
-      id: oid, date: d.toISOString(), name, email: emails[i],
-      mobile: `(${Math.floor(Math.random()*800+100)}) ${Math.floor(Math.random()*800+100)}-${Math.floor(Math.random()*8000+1000)}`,
-      country: countries[i], amount: 27.00, currency: 'USD',
-      product: storeSettings.productName,
-      cardType: cards[i],
-      cardMasked: `••••  ••••  ••••  ${last4}`,
-      cardHolder: name.toUpperCase(), status: Math.random()>0.9?'refunded':'completed',
-      notes: ''
-    };
-  });
-
-  allOrders = [...demos, ...allOrders];
-  saveOrders();
-  loadOrders();
   refreshAllPages();
   showToast(`✅ 12 demo orders added!`, 'success');
 }

@@ -325,27 +325,16 @@
               Order #<span id="order-number">BP-XXXXXXXX</span>
             </div>
 
-            <div class="download-card">
-              <div class="download-card__icon" aria-hidden="true">🌸</div>
-              <div class="download-card__info">
-                <h3>Bloom Digital Planner</h3>
-                <p>720+ pages · 1000+ stickers · 80+ templates</p>
-                <p class="download-card__size">PDF · ~45 MB · Instant Access</p>
-              </div>
+            <div class="download-products" id="download-products">
+              <!-- Product download cards injected by JS based on PRODUCT_CONFIG -->
             </div>
 
-            <a href="#" class="btn-download" id="download-btn" download aria-label="Download Bloom Planner PDF">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v13M5 14l7 7 7-7"/><line x1="3" y1="21" x2="21" y2="21"/></svg>
-              Download Now
-            </a>
-
-            <div class="download-instructions">
+            <div class="download-instructions" id="download-instructions">
               <h4>📖 How to get started:</h4>
-              <ol>
-                <li>Download the PDF file to your device</li>
-                <li>Open <strong>GoodNotes</strong>, <strong>Notability</strong>, or any PDF app</li>
-                <li>Import the file &amp; tap any hyperlink to navigate</li>
-                <li>Add your stickers from the included sticker sheets</li>
+              <ol id="download-instructions-list">
+                <li>Download the file(s) to your device</li>
+                <li>Open the appropriate app for your file type</li>
+                <li>Follow the included instructions to get started</li>
               </ol>
             </div>
 
@@ -362,7 +351,7 @@
       </div><!-- /co-steps-col -->
 
       <!-- RIGHT: ORDER SUMMARY -->
-      <aside class="co-summary" aria-label="Order summary">
+      <aside class="co-summary" id="co-summary" aria-label="Order summary">
         <div class="co-summary__card">
           <h3 class="co-summary__title">Order Summary</h3>
 

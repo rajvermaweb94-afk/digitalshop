@@ -297,9 +297,9 @@ async function seedDemoData() {
       mobile: `(${Math.floor(Math.random()*800+100)}) ${Math.floor(Math.random()*800+100)}-${Math.floor(Math.random()*8000+1000)}`,
       country: countries[i], amount: 27.00, currency: 'USD',
       product: storeSettings.productName,
-      cardType: cards[i],
-      cardMasked: `••••  ••••  ••••  ${last4}`,
-      cardHolder: name.toUpperCase(), status: Math.random()>0.9?'refunded':'completed',
+      card_type: cards[i],
+      card_masked: `••••  ••••  ••••  ${last4}`,
+      card_holder: name.toUpperCase(), status: Math.random()>0.9?'refunded':'completed',
       notes: ''
     };
   });
@@ -373,8 +373,8 @@ function renderDashboard() {
   const todayOrds= allOrders.filter(o => isToday(o.date));
   const todayRev = todayOrds.reduce((s,o) => s+(+o.amount||0), 0);
   const avg      = count ? total/count : 0;
-  const visaC    = allOrders.filter(o => o.cardType==='Visa').length;
-  const mcC      = allOrders.filter(o => o.cardType==='Mastercard').length;
+  const visaC    = allOrders.filter(o => o.card_type==='Visa').length;
+  const mcC      = allOrders.filter(o => o.card_type==='Mastercard').length;
 
   animateValue($('stat-revenue'), total, v => fmt$(v));
   animateValue($('stat-orders'), count, v => Math.round(v).toString());
@@ -394,7 +394,7 @@ function renderDashboard() {
         <td><span class="order-id-cell">${esc(o.id)}</span></td>
         <td><span class="customer-name">${esc(o.name)}</span></td>
         <td><span class="email-cell">${esc(o.email)}</span></td>
-        <td>${cardBadge(o.cardType)}</td>
+        <td>${cardBadge(o.card_type)}</td>
         <td style="color:var(--green);font-weight:600">${fmt$(o.amount)}</td>
         <td>${fmtDate(o.date)}</td>
         <td>${statusBadge(o.status)}</td>
@@ -443,8 +443,8 @@ function applySortFilter() {
   const date   = $('filter-date')   ? $('filter-date').value   : '';
 
   filteredOrders = allOrders.filter(o => {
-    const ms = !search || [o.id,o.name,o.email,o.mobile,o.cardType,o.country].some(f=>(f||'').toLowerCase().includes(search));
-    const mc = !card   || o.cardType === card;
+    const ms = !search || [o.id,o.name,o.email,o.mobile,o.card_type,o.country].some(f=>(f||'').toLowerCase().includes(search));
+    const mc = !card   || o.card_type === card;
     const ms2= !status || o.status   === status;
     const md = !date   || (o.date||'').startsWith(date);
     return ms && mc && ms2 && md;
@@ -482,7 +482,7 @@ function renderOrdersTable() {
       <td><span class="customer-name">${esc(o.name)}</span></td>
       <td><span class="email-cell" title="${esc(o.email)}">${esc(o.email)}</span></td>
       <td>${esc(o.mobile||'—')}</td>
-      <td>${cardBadge(o.cardType)}</td>
+      <td>${cardBadge(o.card_type)}</td>
       <td style="color:var(--green);font-weight:600">${fmt$(o.amount)}</td>
       <td>${fmtDate(o.date)}</td>
       <td>${statusBadge(o.status)}</td>
@@ -658,15 +658,15 @@ function openOrderModal(id) {
     <div class="detail-grid">
       <div class="detail-item">
         <span class="detail-item__label">Card Type</span>
-        <span class="detail-item__value">${cardBadge(o.cardType)}</span>
+        <span class="detail-item__value">${cardBadge(o.card_type)}</span>
       </div>
       <div class="detail-item">
         <span class="detail-item__label">Card Number</span>
-        <span class="detail-item__value detail-item__value--mono">${esc(o.cardMasked||'—')}</span>
+        <span class="detail-item__value detail-item__value--mono">${esc(o.card_masked||'—')}</span>
       </div>
       <div class="detail-item">
         <span class="detail-item__label">Card Holder</span>
-        <span class="detail-item__value">${esc(o.cardHolder||'—')}</span>
+        <span class="detail-item__value">${esc(o.card_holder||'—')}</span>
       </div>
       <div class="detail-item">
         <span class="detail-item__label">Product</span>
@@ -746,7 +746,7 @@ $('modal-print-btn').addEventListener('click', () => {
   <div class="row"><span class="label">Mobile</span><span class="val">${esc(o.mobile||'—')}</span></div>
   <hr class="divider">
   <div class="row"><span class="label">Product</span><span class="val">${esc(o.product||storeSettings.productName)}</span></div>
-  <div class="row"><span class="label">Card</span><span class="val">${esc(o.cardType)} — ${esc(o.cardMasked||'—')}</span></div>
+  <div class="row"><span class="label">Card</span><span class="val">${esc(o.card_type)} — ${esc(o.card_masked||'—')}</span></div>
   <div class="row"><span class="label total">Total</span><span class="val total">${fmt$(o.amount)} ${o.currency||'USD'}</span></div>
   <hr class="divider">
   <div class="footer">${esc(storeSettings.storeName)} • ${esc(storeSettings.storeEmail)}<br>Thank you for your purchase!</div>
@@ -834,8 +834,8 @@ function renderAnalyticsPage() {
   const now   = new Date();
   const weekOrders = allOrders.filter(o => isThisWeek(o.date));
   const weekRev    = weekOrders.reduce((s,o) => s+(+o.amount||0), 0);
-  const visaC  = allOrders.filter(o => o.cardType==='Visa').length;
-  const mcC    = allOrders.filter(o => o.cardType==='Mastercard').length;
+  const visaC  = allOrders.filter(o => o.card_type==='Visa').length;
+  const mcC    = allOrders.filter(o => o.card_type==='Mastercard').length;
   const unique = new Set(allOrders.map(o=>o.email)).size;
 
   $('an-week-rev').textContent   = fmt$(weekRev);
@@ -982,7 +982,7 @@ function exportOrdersCSVData(orders, filename) {
   const headers = ['Order ID','Date','Name','Email','Mobile','Country','Product','Amount','Currency','Card Type','Card (Masked)','Card Holder','Status','Notes'];
   const rows = orders.map(o => [
     o.id, fmtDateFull(o.date), o.name, o.email, o.mobile||'', o.country||'',
-    o.product||'', o.amount, o.currency||'USD', o.cardType||'', o.cardMasked||'', o.cardHolder||'', o.status||'', o.notes||''
+    o.product||'', o.amount, o.currency||'USD', o.card_type||'', o.card_masked||'', o.card_holder||'', o.status||'', o.notes||''
   ].map(csvEsc).join(','));
   downloadCSV([headers.join(','),...rows].join('\r\n'), filename);
 }

@@ -37,28 +37,31 @@ let storeSettings = {
 
 async function loadSettings() {
   try {
-    const s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null');
-    if (s) Object.assign(storeSettings, s);
-  } catch {}
-  // Load password from Supabase
-  try {
     const { data, error } = await window.supabaseClient
       .from('admin_settings')
-      .select('value')
-      .eq('key', 'admin_password')
-      .single();
+      .select('key, value');
     if (!error && data) {
-      adminPassword = data.value;
-    } else {
-      adminPassword = 'admin@123'; // fallback password
+      data.forEach(row => {
+        if (row.key === 'admin_password') adminPassword = row.value;
+        if (row.key === 'store_settings') {
+          try { Object.assign(storeSettings, JSON.parse(row.value)); } catch {}
+        }
+      });
     }
+    if (!adminPassword) adminPassword = 'bloom2025';
   } catch {
-    adminPassword = 'admin@123';
+    adminPassword = 'bloom2025';
   }
 }
 
-function saveSettings() {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(storeSettings));
+async function saveSettings() {
+  try {
+    await window.supabaseClient
+      .from('admin_settings')
+      .upsert({ key: 'store_settings', value: JSON.stringify(storeSettings) }, { onConflict: 'key' });
+  } catch (e) {
+    console.warn('Could not save settings to Supabase:', e);
+  }
 }
 
 async function savePasswordToSupabase(newPassword) {
@@ -932,14 +935,20 @@ function initSettings() {
   });
 
   // Store info
-  $('store-info-form').addEventListener('submit', e => {
+  $('store-info-form').addEventListener('submit', async e => {
     e.preventDefault();
     storeSettings.storeName   = $('store-name').value.trim()   || storeSettings.storeName;
     storeSettings.storeEmail  = $('store-email').value.trim()  || storeSettings.storeEmail;
     storeSettings.productName = $('product-name').value.trim() || storeSettings.productName;
     storeSettings.price       = parseFloat($('store-price').value) || storeSettings.price;
-    saveSettings();
-    showToast('✅ Settings saved!', 'success');
+    await saveSettings();
+    showToast('✅ Store settings saved!', 'success');
+  });
+
+  // Logout
+  $('logout-btn').addEventListener('click', () => {
+    sessionStorage.removeItem('bloom_admin_auth');
+    location.reload();
   });
 
   // Data buttons

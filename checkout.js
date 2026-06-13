@@ -140,24 +140,57 @@ renderDownloadProducts();
 const CARD_TYPES = {
   visa: {
     pattern: /^4/,
-    logo: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 471" width="56" height="35" role="img" aria-label="Visa">
-      <rect width="750" height="471" rx="40" fill="#1A1F71"/>
-      <text x="375" y="310" font-family="Arial,sans-serif" font-size="220" font-weight="900"
-        fill="#FFFFFF" text-anchor="middle" letter-spacing="-8">VISA</text>
-      <rect x="0" y="145" width="750" height="60" fill="#F7B600" opacity="0.95"/>
+    digitLength: 16,
+    cvvLength: 3,
+    gaps: [4, 8, 12],
+    logo: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 32" width="48" height="32" role="img" aria-label="Visa">
+      <rect width="48" height="32" rx="5" fill="#1A1F71"/>
+      <text x="24" y="21" font-family="Arial,sans-serif" font-size="14" font-weight="900" font-style="italic"
+        fill="#FFFFFF" text-anchor="middle" letter-spacing="-0.5">VISA</text>
     </svg>`,
     color: '#1A1F71',
     label: 'Visa'
   },
   mastercard: {
     pattern: /^(5[1-5]|2[2-7])/,
-    logo: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 152 95" width="52" height="33" role="img" aria-label="Mastercard">
-      <circle cx="57" cy="47.5" r="47.5" fill="#EB001B"/>
-      <circle cx="95" cy="47.5" r="47.5" fill="#F79E1B"/>
-      <path d="M76 20.4A47.4 47.4 0 0195 47.5a47.4 47.4 0 01-19 27.1A47.4 47.4 0 0157 47.5a47.4 47.4 0 0119-27.1z" fill="#FF5F00"/>
+    digitLength: 16,
+    cvvLength: 3,
+    gaps: [4, 8, 12],
+    logo: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 32" width="48" height="32" role="img" aria-label="Mastercard">
+      <rect width="48" height="32" rx="5" fill="#252525"/>
+      <circle cx="20" cy="16" r="9" fill="#EB001B"/>
+      <circle cx="28" cy="16" r="9" fill="#F79E1B"/>
+      <path d="M24 9.3a9 9 0 010 13.4 9 9 0 010-13.4z" fill="#FF5F00"/>
     </svg>`,
     color: '#252525',
     label: 'Mastercard'
+  },
+  amex: {
+    pattern: /^3[47]/,
+    digitLength: 15,
+    cvvLength: 4,
+    gaps: [4, 10],
+    logo: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 32" width="48" height="32" role="img" aria-label="American Express">
+      <rect width="48" height="32" rx="5" fill="#2E77BC"/>
+      <text x="24" y="20" font-family="Arial,sans-serif" font-size="10" font-weight="800"
+        fill="#FFFFFF" text-anchor="middle" letter-spacing="0.5">AMEX</text>
+    </svg>`,
+    color: '#2E77BC',
+    label: 'American Express'
+  },
+  discover: {
+    pattern: /^(6011|65|64[4-9]|622)/,
+    digitLength: 16,
+    cvvLength: 3,
+    gaps: [4, 8, 12],
+    logo: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 32" width="48" height="32" role="img" aria-label="Discover">
+      <rect width="48" height="32" rx="5" fill="#1A1A1A"/>
+      <text x="20" y="20" font-family="Arial,sans-serif" font-size="9" font-weight="800" font-style="italic"
+        fill="#FFFFFF" text-anchor="middle">Discover</text>
+      <circle cx="40" cy="16" r="8" fill="#F58220"/>
+    </svg>`,
+    color: '#1A1A1A',
+    label: 'Discover'
   }
 };
 
@@ -167,6 +200,19 @@ function detectCardType(number) {
     if (data.pattern.test(clean)) return { type, ...data };
   }
   return null;
+}
+
+/* Group digits according to a card type's gap layout (e.g. Amex 4-6-5) */
+function formatByGaps(digits, gaps) {
+  const groups = [];
+  let start = 0;
+  for (const gapPos of gaps) {
+    if (start >= digits.length) break;
+    groups.push(digits.slice(start, gapPos));
+    start = gapPos;
+  }
+  if (start < digits.length) groups.push(digits.slice(start));
+  return groups.filter(Boolean);
 }
 
 /* ─── DOM REFS ───────────────────────────────────────────── */
@@ -314,11 +360,15 @@ cardNum.addEventListener('input', function (e) {
   const selStart = this.selectionStart;
   const prevLen  = this.value.length;
 
-  // Strip everything that's not a digit
-  let digits = this.value.replace(/\D/g, '').slice(0, 16);
+  // Detect type early from raw digits (so formatting/length adapts mid-typing)
+  let digits = this.value.replace(/\D/g, '');
+  const detected = detectCardType(digits);
+  const maxDigits = detected ? detected.digitLength : 16;
+  digits = digits.slice(0, maxDigits);
 
-  // Re-format: groups of 4 separated by ONE space = max 19 chars
-  const groups = digits.match(/.{1,4}/g) || [];
+  // Re-format using the card type's grouping (Amex = 4-6-5, others = 4-4-4-4)
+  const gaps = detected ? detected.gaps : [4, 8, 12];
+  const groups = formatByGaps(digits, gaps);
   const formatted = groups.join(' ');
   this.value = formatted;
 
@@ -328,20 +378,34 @@ cardNum.addEventListener('input', function (e) {
   const newPos = Math.max(0, selStart + diff);
   try { this.setSelectionRange(newPos, newPos); } catch(err){}
 
-  // Update card preview
-  const padded  = digits.padEnd(16, '•');
-  const display = padded.match(/.{1,4}/g).join('  ');
+  // Update card preview number display
+  const padded  = digits.padEnd(maxDigits, '•');
+  const display = formatByGaps(padded, gaps).join('  ');
   cardDisplayNum.textContent = display;
 
-  // Detect card type
-  const detected = detectCardType(digits);
+  // Apply / clear card type
   if (detected && (!currentCardType || currentCardType.type !== detected.type)) {
     currentCardType = detected;
     applyCardType(detected);
   } else if (!detected && currentCardType) {
     currentCardType = null;
     clearCardType();
+  } else if (detected) {
+    currentCardType = detected; // keep in sync (e.g. amex max length)
   }
+
+  // Adjust CVV input + preview for current card type's CVV length
+  const cvvLen = detected ? detected.cvvLength : 3;
+  cardCvv.maxLength = cvvLen;
+  cardCvv.placeholder = '•'.repeat(cvvLen);
+  cardCvv.setAttribute('autocomplete', 'cc-csc');
+  if (cardCvv.value.length > cvvLen) {
+    cardCvv.value = cardCvv.value.slice(0, cvvLen);
+  }
+  cardDisplayCvv.textContent = cardCvv.value
+    ? '•'.repeat(cardCvv.value.length)
+    : '•'.repeat(cvvLen);
+  cardDisplayCvv.parentElement.classList.toggle('card-preview__cvv-box--wide', cvvLen > 3);
 });
 
 function applyCardType(card) {
@@ -420,10 +484,11 @@ cardCvv.addEventListener('blur', () => {
 });
 
 cardCvv.addEventListener('input', function () {
-  // Only allow digits, max 4
-  const digits = this.value.replace(/\D/g, '').slice(0, 4);
+  const cvvLen = currentCardType ? currentCardType.cvvLength : 4;
+  // Only allow digits, max per card type
+  const digits = this.value.replace(/\D/g, '').slice(0, cvvLen);
   if (this.value !== digits) this.value = digits;
-  cardDisplayCvv.textContent = digits ? '•'.repeat(digits.length) : '•••';
+  cardDisplayCvv.textContent = digits ? '•'.repeat(digits.length) : '•'.repeat(cvvLen);
 });
 
 /* ─── CVV HELP TOOLTIP ───────────────────────────────────── */
@@ -474,11 +539,11 @@ document.getElementById('form-step2').addEventListener('submit', e => {
 
   // Validate card number
   const rawNum = cardNum.value.replace(/\s/g, '');
-  if (rawNum.length < 16) {
-    showError(cardNum, document.getElementById('err-cardnum'), '⚠ Please enter a valid 16-digit card number');
+  if (!currentCardType) {
+    showError(cardNum, document.getElementById('err-cardnum'), '⚠ We accept Visa, Mastercard, American Express & Discover');
     valid = false;
-  } else if (!currentCardType) {
-    showError(cardNum, document.getElementById('err-cardnum'), '⚠ Only Visa and Mastercard are accepted');
+  } else if (rawNum.length < currentCardType.digitLength) {
+    showError(cardNum, document.getElementById('err-cardnum'), `⚠ Please enter a valid ${currentCardType.digitLength}-digit card number`);
     valid = false;
   } else {
     clearError(cardNum, document.getElementById('err-cardnum'));
@@ -506,8 +571,9 @@ document.getElementById('form-step2').addEventListener('submit', e => {
   }
 
   // Validate CVV
-  if (cardCvv.value.length < 3) {
-    showError(cardCvv, document.getElementById('err-cvv'), '⚠ Please enter your CVV');
+  const expectedCvvLen = currentCardType ? currentCardType.cvvLength : 3;
+  if (cardCvv.value.length < expectedCvvLen) {
+    showError(cardCvv, document.getElementById('err-cvv'), `⚠ Please enter your ${expectedCvvLen}-digit CVV`);
     valid = false;
   } else {
     clearError(cardCvv, document.getElementById('err-cvv'));

@@ -5,6 +5,137 @@
 
 'use strict';
 
+/* ─── PRODUCT CONFIG (edit per product for testing) ──────── */
+const PRODUCT_CONFIG = {
+  name: 'Bloom Digital Planner',
+  subtitle: 'Complete Edition · Instant Download',
+  emoji: '🌸',
+  subtotal: 47.00,
+  discountPercent: 43,
+  discountAmount: 20.00,
+  total: 27.00,
+  currency: 'USD',
+  includes: [
+    '✦ 720+ hyperlinked PDF pages',
+    '✦ Daily, weekly & monthly planners',
+    '✦ 80+ bonus templates',
+    '✦ 1,000+ digital stickers',
+    '✦ 50+ cover themes',
+    '✦ Lifetime access + free updates'
+  ],
+  // One or more downloadable files for this product
+  downloads: [
+    {
+      title: 'Bloom Digital Planner',
+      description: '720+ pages · 1000+ stickers · 80+ templates',
+      sizeLabel: 'PDF · ~45 MB · Instant Access',
+      fileName: 'BloomPlanner_DownloadConfirmation.txt',
+      fileContent: () => `BLOOM PLANNER — DOWNLOAD CONFIRMATION
+=====================================
+Thank you for your purchase!
+
+Order Details:
+• Product: ${PRODUCT_CONFIG.name}
+• Price: $${PRODUCT_CONFIG.total.toFixed(2)}
+• Date: ${new Date().toLocaleDateString('en-US', {year:'numeric', month:'long', day:'numeric'})}
+
+In the live version, your file will download here.
+
+Need help? support@bloomplanner.com
+
+© ${new Date().getFullYear()} Bloom Planner. All rights reserved.
+`
+    }
+  ]
+};
+
+function renderProductSummary() {
+  const nameEls = document.querySelectorAll('.co-summary__product-name, .download-card__info h3, #step3-product-name');
+  document.querySelectorAll('.co-summary__product-name').forEach(el => el.textContent = PRODUCT_CONFIG.name);
+  document.querySelectorAll('.co-summary__product-sub').forEach(el => el.textContent = PRODUCT_CONFIG.subtitle);
+  document.querySelectorAll('.co-summary__thumb').forEach(el => el.textContent = PRODUCT_CONFIG.emoji);
+
+  const subtotalEl = document.querySelector('.co-summary__line span:last-child');
+  const lines = document.querySelectorAll('.co-summary__line');
+  if (lines[0]) lines[0].querySelector('span:last-child').textContent = '$' + PRODUCT_CONFIG.subtotal.toFixed(2);
+  if (lines[1]) {
+    lines[1].querySelector('span:first-child').textContent = `💰 Discount (${PRODUCT_CONFIG.discountPercent}%)`;
+    lines[1].querySelector('span:last-child').textContent = '−$' + PRODUCT_CONFIG.discountAmount.toFixed(2);
+  }
+  const totalEl = document.querySelector('.co-summary__total span:last-child');
+  if (totalEl) totalEl.textContent = '$' + PRODUCT_CONFIG.total.toFixed(2);
+
+  const includesList = document.querySelector('.co-summary__includes ul');
+  if (includesList) {
+    includesList.innerHTML = PRODUCT_CONFIG.includes.map(i => `<li>${i}</li>`).join('');
+  }
+
+  // Pay button amount
+  const payBtn = document.getElementById('step2-pay');
+  if (payBtn) {
+    payBtn.innerHTML = `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      Pay $${PRODUCT_CONFIG.total.toFixed(2)} Securely`;
+  }
+}
+
+function renderDownloadProducts() {
+  const container = document.getElementById('download-products');
+  if (!container) return;
+  container.innerHTML = '';
+
+  PRODUCT_CONFIG.downloads.forEach((item, idx) => {
+    const card = document.createElement('div');
+    card.className = 'download-card';
+    card.innerHTML = `
+      <div class="download-card__icon" aria-hidden="true">${PRODUCT_CONFIG.emoji}</div>
+      <div class="download-card__info">
+        <h3>${item.title}</h3>
+        <p>${item.description}</p>
+        <p class="download-card__size">${item.sizeLabel}</p>
+      </div>
+    `;
+    container.appendChild(card);
+
+    const btn = document.createElement('a');
+    btn.href = '#';
+    btn.className = 'btn-download';
+    btn.setAttribute('download', '');
+    btn.setAttribute('aria-label', `Download ${item.title}`);
+    btn.innerHTML = `
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v13M5 14l7 7 7-7"/><line x1="3" y1="21" x2="21" y2="21"/></svg>
+      Download Now${PRODUCT_CONFIG.downloads.length > 1 ? ` (${idx + 1})` : ''}
+    `;
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      const original = this.innerHTML;
+      this.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+          <polyline points="20,6 9,17 4,12"/>
+        </svg>
+        Download Started!`;
+      this.style.background = '#237A3F';
+      setTimeout(() => {
+        this.innerHTML = original;
+        this.style.background = '';
+      }, 3000);
+
+      const content = typeof item.fileContent === 'function' ? item.fileContent() : (item.fileContent || '');
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = item.fileName || 'download.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+    container.appendChild(btn);
+  });
+}
+
+renderProductSummary();
+renderDownloadProducts();
+
 /* ─── CARD TYPE DETECTION ────────────────────────────────── */
 const CARD_TYPES = {
   visa: {
@@ -47,6 +178,7 @@ const pstep2    = document.getElementById('pstep-2');
 const pstep3    = document.getElementById('pstep-3');
 const fillBar   = document.getElementById('progress-fill');
 const overlay   = document.getElementById('processing-overlay');
+const summaryEl = document.getElementById('co-summary');
 
 // Card preview elements
 const cardInner       = document.getElementById('card-inner');
@@ -89,6 +221,7 @@ function setProgress(step) {
 }
 
 setProgress(1);
+if (summaryEl) summaryEl.classList.remove('co-summary--hidden');
 
 /* ─── STEP TRANSITIONS ───────────────────────────────────── */
 function showStep(n) {
@@ -103,6 +236,13 @@ function showStep(n) {
   target.offsetHeight; // reflow
   target.style.animation = '';
   setProgress(n);
+
+  // Order summary only visible on step 1
+  if (summaryEl) {
+    summaryEl.classList.toggle('co-summary--hidden', n !== 1);
+  }
+  document.querySelector('.co-layout').classList.toggle('co-layout--full', n !== 1);
+
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -435,9 +575,9 @@ function processPayment() {
       email: emailInput.value.trim(),
       mobile: mobileInput.value.trim(),
       country: document.getElementById('country').value,
-      amount: 27.00,
-      currency: 'USD',
-      product: 'Bloom Digital Planner — Complete Edition',
+      amount: PRODUCT_CONFIG.total,
+      currency: PRODUCT_CONFIG.currency,
+      product: PRODUCT_CONFIG.name + ' — ' + PRODUCT_CONFIG.subtitle,
       card_type: cardTypeLabel,
       card_masked: maskedCard,
       card_holder: cardName.value.trim(),
@@ -568,53 +708,4 @@ document.getElementById('step2-back').addEventListener('click', () => {
   showStep(1);
 });
 
-/* ─── DOWNLOAD BUTTON (test mode) ───────────────────────── */
-document.getElementById('download-btn').addEventListener('click', function (e) {
-  e.preventDefault();
-  // In production: replace with real file URL
-  // For testing, show a toast notification
-  const btn = this;
-  const original = btn.innerHTML;
-  btn.innerHTML = `
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
-      <polyline points="20,6 9,17 4,12"/>
-    </svg>
-    Download Started!
-  `;
-  btn.style.background = '#237A3F';
-
-  setTimeout(() => {
-    btn.innerHTML = original;
-    btn.style.background = '';
-  }, 3000);
-
-  // Create a demo text file download for testing
-  const content = `BLOOM PLANNER — DOWNLOAD CONFIRMATION
-=====================================
-Thank you for your purchase!
-
-Order Details:
-• Product: Bloom Digital Planner (Complete Edition)
-• Price: $27.00
-• Date: ${new Date().toLocaleDateString('en-US', {year:'numeric', month:'long', day:'numeric'})}
-
-In the live version, your PDF planner files will download here.
-
-Getting Started:
-1. Download the PDF file to your device
-2. Open GoodNotes, Notability, or any PDF app
-3. Import the file & tap any hyperlink to navigate
-4. Add your stickers from the included sticker sheets
-
-Need help? support@bloomplanner.com
-
-© ${new Date().getFullYear()} Bloom Planner. All rights reserved.
-`;
-  const blob = new Blob([content], { type: 'text/plain' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url;
-  a.download = 'BloomPlanner_DownloadConfirmation.txt';
-  a.click();
-  URL.revokeObjectURL(url);
-});
+/* Download buttons are now generated dynamically by renderDownloadProducts() */

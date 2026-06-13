@@ -254,6 +254,12 @@ button { font-family: var(--font-sans); cursor: pointer; border: none; backgroun
   min-width: 0;
 }
 
+.co-layout--full .co-steps-col {
+  max-width: 640px;
+  margin: 0 auto;
+  width: 100%;
+}
+
 /* ─── STEP PANEL ─────────────────────────────────────────── */
 .co-step {
   background: var(--color-white);
@@ -266,6 +272,10 @@ button { font-family: var(--font-sans); cursor: pointer; border: none; backgroun
 
 .co-step--hidden {
   display: none;
+}
+
+.co-summary--hidden {
+  display: none !important;
 }
 
 @keyframes stepIn {

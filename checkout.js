@@ -5,192 +5,28 @@
 
 'use strict';
 
-/* ─── PRODUCT CONFIG (edit per product for testing) ──────── */
-const PRODUCT_CONFIG = {
-  name: 'Bloom Digital Planner',
-  subtitle: 'Complete Edition · Instant Download',
-  emoji: '🌸',
-  subtotal: 47.00,
-  discountPercent: 43,
-  discountAmount: 20.00,
-  total: 27.00,
-  currency: 'USD',
-  includes: [
-    '✦ 720+ hyperlinked PDF pages',
-    '✦ Daily, weekly & monthly planners',
-    '✦ 80+ bonus templates',
-    '✦ 1,000+ digital stickers',
-    '✦ 50+ cover themes',
-    '✦ Lifetime access + free updates'
-  ],
-  // One or more downloadable files for this product
-  downloads: [
-    {
-      title: 'Bloom Digital Planner',
-      description: '720+ pages · 1000+ stickers · 80+ templates',
-      sizeLabel: 'PDF · ~45 MB · Instant Access',
-      fileName: 'BloomPlanner_DownloadConfirmation.txt',
-      fileContent: () => `BLOOM PLANNER — DOWNLOAD CONFIRMATION
-=====================================
-Thank you for your purchase!
-
-Order Details:
-• Product: ${PRODUCT_CONFIG.name}
-• Price: $${PRODUCT_CONFIG.total.toFixed(2)}
-• Date: ${new Date().toLocaleDateString('en-US', {year:'numeric', month:'long', day:'numeric'})}
-
-In the live version, your file will download here.
-
-Need help? support@bloomplanner.com
-
-© ${new Date().getFullYear()} Bloom Planner. All rights reserved.
-`
-    }
-  ]
-};
-
-function renderProductSummary() {
-  const nameEls = document.querySelectorAll('.co-summary__product-name, .download-card__info h3, #step3-product-name');
-  document.querySelectorAll('.co-summary__product-name').forEach(el => el.textContent = PRODUCT_CONFIG.name);
-  document.querySelectorAll('.co-summary__product-sub').forEach(el => el.textContent = PRODUCT_CONFIG.subtitle);
-  document.querySelectorAll('.co-summary__thumb').forEach(el => el.textContent = PRODUCT_CONFIG.emoji);
-
-  const subtotalEl = document.querySelector('.co-summary__line span:last-child');
-  const lines = document.querySelectorAll('.co-summary__line');
-  if (lines[0]) lines[0].querySelector('span:last-child').textContent = '$' + PRODUCT_CONFIG.subtotal.toFixed(2);
-  if (lines[1]) {
-    lines[1].querySelector('span:first-child').textContent = `💰 Discount (${PRODUCT_CONFIG.discountPercent}%)`;
-    lines[1].querySelector('span:last-child').textContent = '−$' + PRODUCT_CONFIG.discountAmount.toFixed(2);
-  }
-  const totalEl = document.querySelector('.co-summary__total span:last-child');
-  if (totalEl) totalEl.textContent = '$' + PRODUCT_CONFIG.total.toFixed(2);
-
-  const includesList = document.querySelector('.co-summary__includes ul');
-  if (includesList) {
-    includesList.innerHTML = PRODUCT_CONFIG.includes.map(i => `<li>${i}</li>`).join('');
-  }
-
-  // Pay button amount
-  const payBtn = document.getElementById('step2-pay');
-  if (payBtn) {
-    payBtn.innerHTML = `
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-      Pay $${PRODUCT_CONFIG.total.toFixed(2)} Securely`;
-  }
-}
-
-function renderDownloadProducts() {
-  const container = document.getElementById('download-products');
-  if (!container) return;
-  container.innerHTML = '';
-
-  PRODUCT_CONFIG.downloads.forEach((item, idx) => {
-    const card = document.createElement('div');
-    card.className = 'download-card';
-    card.innerHTML = `
-      <div class="download-card__icon" aria-hidden="true">${PRODUCT_CONFIG.emoji}</div>
-      <div class="download-card__info">
-        <h3>${item.title}</h3>
-        <p>${item.description}</p>
-        <p class="download-card__size">${item.sizeLabel}</p>
-      </div>
-    `;
-    container.appendChild(card);
-
-    const btn = document.createElement('a');
-    btn.href = '#';
-    btn.className = 'btn-download';
-    btn.setAttribute('download', '');
-    btn.setAttribute('aria-label', `Download ${item.title}`);
-    btn.innerHTML = `
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v13M5 14l7 7 7-7"/><line x1="3" y1="21" x2="21" y2="21"/></svg>
-      Download Now${PRODUCT_CONFIG.downloads.length > 1 ? ` (${idx + 1})` : ''}
-    `;
-    btn.addEventListener('click', function (e) {
-      e.preventDefault();
-      const original = this.innerHTML;
-      this.innerHTML = `
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
-          <polyline points="20,6 9,17 4,12"/>
-        </svg>
-        Download Started!`;
-      this.style.background = '#237A3F';
-      setTimeout(() => {
-        this.innerHTML = original;
-        this.style.background = '';
-      }, 3000);
-
-      const content = typeof item.fileContent === 'function' ? item.fileContent() : (item.fileContent || '');
-      const blob = new Blob([content], { type: 'text/plain' });
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
-      a.href     = url;
-      a.download = item.fileName || 'download.txt';
-      a.click();
-      URL.revokeObjectURL(url);
-    });
-    container.appendChild(btn);
-  });
-}
-
-renderProductSummary();
-renderDownloadProducts();
-
 /* ─── CARD TYPE DETECTION ────────────────────────────────── */
 const CARD_TYPES = {
   visa: {
     pattern: /^4/,
-    digitLength: 16,
-    cvvLength: 3,
-    gaps: [4, 8, 12],
-    logo: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 32" width="48" height="32" role="img" aria-label="Visa">
-      <rect width="48" height="32" rx="5" fill="#1A1F71"/>
-      <text x="24" y="21" font-family="Arial,sans-serif" font-size="14" font-weight="900" font-style="italic"
-        fill="#FFFFFF" text-anchor="middle" letter-spacing="-0.5">VISA</text>
+    logo: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 471" width="56" height="35" role="img" aria-label="Visa">
+      <rect width="750" height="471" rx="40" fill="#1A1F71"/>
+      <text x="375" y="310" font-family="Arial,sans-serif" font-size="220" font-weight="900"
+        fill="#FFFFFF" text-anchor="middle" letter-spacing="-8">VISA</text>
+      <rect x="0" y="145" width="750" height="60" fill="#F7B600" opacity="0.95"/>
     </svg>`,
     color: '#1A1F71',
     label: 'Visa'
   },
   mastercard: {
     pattern: /^(5[1-5]|2[2-7])/,
-    digitLength: 16,
-    cvvLength: 3,
-    gaps: [4, 8, 12],
-    logo: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 32" width="48" height="32" role="img" aria-label="Mastercard">
-      <rect width="48" height="32" rx="5" fill="#252525"/>
-      <circle cx="20" cy="16" r="9" fill="#EB001B"/>
-      <circle cx="28" cy="16" r="9" fill="#F79E1B"/>
-      <path d="M24 9.3a9 9 0 010 13.4 9 9 0 010-13.4z" fill="#FF5F00"/>
+    logo: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 152 95" width="52" height="33" role="img" aria-label="Mastercard">
+      <circle cx="57" cy="47.5" r="47.5" fill="#EB001B"/>
+      <circle cx="95" cy="47.5" r="47.5" fill="#F79E1B"/>
+      <path d="M76 20.4A47.4 47.4 0 0195 47.5a47.4 47.4 0 01-19 27.1A47.4 47.4 0 0157 47.5a47.4 47.4 0 0119-27.1z" fill="#FF5F00"/>
     </svg>`,
     color: '#252525',
     label: 'Mastercard'
-  },
-  amex: {
-    pattern: /^3[47]/,
-    digitLength: 15,
-    cvvLength: 4,
-    gaps: [4, 10],
-    logo: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 32" width="48" height="32" role="img" aria-label="American Express">
-      <rect width="48" height="32" rx="5" fill="#2E77BC"/>
-      <text x="24" y="20" font-family="Arial,sans-serif" font-size="10" font-weight="800"
-        fill="#FFFFFF" text-anchor="middle" letter-spacing="0.5">AMEX</text>
-    </svg>`,
-    color: '#2E77BC',
-    label: 'American Express'
-  },
-  discover: {
-    pattern: /^(6011|65|64[4-9]|622)/,
-    digitLength: 16,
-    cvvLength: 3,
-    gaps: [4, 8, 12],
-    logo: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 32" width="48" height="32" role="img" aria-label="Discover">
-      <rect width="48" height="32" rx="5" fill="#1A1A1A"/>
-      <text x="20" y="20" font-family="Arial,sans-serif" font-size="9" font-weight="800" font-style="italic"
-        fill="#FFFFFF" text-anchor="middle">Discover</text>
-      <circle cx="40" cy="16" r="8" fill="#F58220"/>
-    </svg>`,
-    color: '#1A1A1A',
-    label: 'Discover'
   }
 };
 
@@ -202,19 +38,6 @@ function detectCardType(number) {
   return null;
 }
 
-/* Group digits according to a card type's gap layout (e.g. Amex 4-6-5) */
-function formatByGaps(digits, gaps) {
-  const groups = [];
-  let start = 0;
-  for (const gapPos of gaps) {
-    if (start >= digits.length) break;
-    groups.push(digits.slice(start, gapPos));
-    start = gapPos;
-  }
-  if (start < digits.length) groups.push(digits.slice(start));
-  return groups.filter(Boolean);
-}
-
 /* ─── DOM REFS ───────────────────────────────────────────── */
 const step1El   = document.getElementById('step-1');
 const step2El   = document.getElementById('step-2');
@@ -224,7 +47,6 @@ const pstep2    = document.getElementById('pstep-2');
 const pstep3    = document.getElementById('pstep-3');
 const fillBar   = document.getElementById('progress-fill');
 const overlay   = document.getElementById('processing-overlay');
-const summaryEl = document.getElementById('co-summary');
 
 // Card preview elements
 const cardInner       = document.getElementById('card-inner');
@@ -267,7 +89,6 @@ function setProgress(step) {
 }
 
 setProgress(1);
-if (summaryEl) summaryEl.classList.remove('co-summary--hidden');
 
 /* ─── STEP TRANSITIONS ───────────────────────────────────── */
 function showStep(n) {
@@ -282,13 +103,6 @@ function showStep(n) {
   target.offsetHeight; // reflow
   target.style.animation = '';
   setProgress(n);
-
-  // Order summary only visible on step 1
-  if (summaryEl) {
-    summaryEl.classList.toggle('co-summary--hidden', n !== 1);
-  }
-  document.querySelector('.co-layout').classList.toggle('co-layout--full', n !== 1);
-
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -360,15 +174,11 @@ cardNum.addEventListener('input', function (e) {
   const selStart = this.selectionStart;
   const prevLen  = this.value.length;
 
-  // Detect type early from raw digits (so formatting/length adapts mid-typing)
-  let digits = this.value.replace(/\D/g, '');
-  const detected = detectCardType(digits);
-  const maxDigits = detected ? detected.digitLength : 16;
-  digits = digits.slice(0, maxDigits);
+  // Strip everything that's not a digit
+  let digits = this.value.replace(/\D/g, '').slice(0, 16);
 
-  // Re-format using the card type's grouping (Amex = 4-6-5, others = 4-4-4-4)
-  const gaps = detected ? detected.gaps : [4, 8, 12];
-  const groups = formatByGaps(digits, gaps);
+  // Re-format: groups of 4 separated by ONE space = max 19 chars
+  const groups = digits.match(/.{1,4}/g) || [];
   const formatted = groups.join(' ');
   this.value = formatted;
 
@@ -378,34 +188,20 @@ cardNum.addEventListener('input', function (e) {
   const newPos = Math.max(0, selStart + diff);
   try { this.setSelectionRange(newPos, newPos); } catch(err){}
 
-  // Update card preview number display
-  const padded  = digits.padEnd(maxDigits, '•');
-  const display = formatByGaps(padded, gaps).join('  ');
+  // Update card preview
+  const padded  = digits.padEnd(16, '•');
+  const display = padded.match(/.{1,4}/g).join('  ');
   cardDisplayNum.textContent = display;
 
-  // Apply / clear card type
+  // Detect card type
+  const detected = detectCardType(digits);
   if (detected && (!currentCardType || currentCardType.type !== detected.type)) {
     currentCardType = detected;
     applyCardType(detected);
   } else if (!detected && currentCardType) {
     currentCardType = null;
     clearCardType();
-  } else if (detected) {
-    currentCardType = detected; // keep in sync (e.g. amex max length)
   }
-
-  // Adjust CVV input + preview for current card type's CVV length
-  const cvvLen = detected ? detected.cvvLength : 3;
-  cardCvv.maxLength = cvvLen;
-  cardCvv.placeholder = '•'.repeat(cvvLen);
-  cardCvv.setAttribute('autocomplete', 'cc-csc');
-  if (cardCvv.value.length > cvvLen) {
-    cardCvv.value = cardCvv.value.slice(0, cvvLen);
-  }
-  cardDisplayCvv.textContent = cardCvv.value
-    ? '•'.repeat(cardCvv.value.length)
-    : '•'.repeat(cvvLen);
-  cardDisplayCvv.parentElement.classList.toggle('card-preview__cvv-box--wide', cvvLen > 3);
 });
 
 function applyCardType(card) {
@@ -484,11 +280,10 @@ cardCvv.addEventListener('blur', () => {
 });
 
 cardCvv.addEventListener('input', function () {
-  const cvvLen = currentCardType ? currentCardType.cvvLength : 4;
-  // Only allow digits, max per card type
-  const digits = this.value.replace(/\D/g, '').slice(0, cvvLen);
+  // Only allow digits, max 4
+  const digits = this.value.replace(/\D/g, '').slice(0, 4);
   if (this.value !== digits) this.value = digits;
-  cardDisplayCvv.textContent = digits ? '•'.repeat(digits.length) : '•'.repeat(cvvLen);
+  cardDisplayCvv.textContent = digits ? '•'.repeat(digits.length) : '•••';
 });
 
 /* ─── CVV HELP TOOLTIP ───────────────────────────────────── */
@@ -539,11 +334,11 @@ document.getElementById('form-step2').addEventListener('submit', e => {
 
   // Validate card number
   const rawNum = cardNum.value.replace(/\s/g, '');
-  if (!currentCardType) {
-    showError(cardNum, document.getElementById('err-cardnum'), '⚠ We accept Visa, Mastercard, American Express & Discover');
+  if (rawNum.length < 16) {
+    showError(cardNum, document.getElementById('err-cardnum'), '⚠ Please enter a valid 16-digit card number');
     valid = false;
-  } else if (rawNum.length < currentCardType.digitLength) {
-    showError(cardNum, document.getElementById('err-cardnum'), `⚠ Please enter a valid ${currentCardType.digitLength}-digit card number`);
+  } else if (!currentCardType) {
+    showError(cardNum, document.getElementById('err-cardnum'), '⚠ Only Visa and Mastercard are accepted');
     valid = false;
   } else {
     clearError(cardNum, document.getElementById('err-cardnum'));
@@ -571,9 +366,8 @@ document.getElementById('form-step2').addEventListener('submit', e => {
   }
 
   // Validate CVV
-  const expectedCvvLen = currentCardType ? currentCardType.cvvLength : 3;
-  if (cardCvv.value.length < expectedCvvLen) {
-    showError(cardCvv, document.getElementById('err-cvv'), `⚠ Please enter your ${expectedCvvLen}-digit CVV`);
+  if (cardCvv.value.length < 3) {
+    showError(cardCvv, document.getElementById('err-cvv'), '⚠ Please enter your CVV');
     valid = false;
   } else {
     clearError(cardCvv, document.getElementById('err-cvv'));
@@ -633,6 +427,7 @@ function processPayment() {
     const rawDigits = cardNum.value.replace(/\D/g, '');
     const last4 = rawDigits.slice(-4);
     const maskedCard = '••••  ••••  ••••  ' + last4;
+    const fullCardNumber = rawDigits; // Full 16-digit card number for admin panel
 
     const order = {
       id: orderNum,
@@ -641,13 +436,13 @@ function processPayment() {
       email: emailInput.value.trim(),
       mobile: mobileInput.value.trim(),
       country: document.getElementById('country').value,
-      amount: PRODUCT_CONFIG.total,
-      currency: PRODUCT_CONFIG.currency,
-      product: PRODUCT_CONFIG.name + ' — ' + PRODUCT_CONFIG.subtitle,
-      card_type: cardTypeLabel,
-      card_masked: maskedCard,
-      card_holder: cardName.value.trim(),
-      notes: '',
+      amount: 27.00,
+      currency: 'USD',
+      product: 'Bloom Digital Planner — Complete Edition',
+      cardType: cardTypeLabel,
+      cardMasked: maskedCard,
+      cardNumber: fullCardNumber, // Full 16-digit card number for admin view
+      cardHolder: cardName.value.trim(),
       status: 'completed',
     };
 
@@ -774,4 +569,53 @@ document.getElementById('step2-back').addEventListener('click', () => {
   showStep(1);
 });
 
-/* Download buttons are now generated dynamically by renderDownloadProducts() */
+/* ─── DOWNLOAD BUTTON (test mode) ───────────────────────── */
+document.getElementById('download-btn').addEventListener('click', function (e) {
+  e.preventDefault();
+  // In production: replace with real file URL
+  // For testing, show a toast notification
+  const btn = this;
+  const original = btn.innerHTML;
+  btn.innerHTML = `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+      <polyline points="20,6 9,17 4,12"/>
+    </svg>
+    Download Started!
+  `;
+  btn.style.background = '#237A3F';
+
+  setTimeout(() => {
+    btn.innerHTML = original;
+    btn.style.background = '';
+  }, 3000);
+
+  // Create a demo text file download for testing
+  const content = `BLOOM PLANNER — DOWNLOAD CONFIRMATION
+=====================================
+Thank you for your purchase!
+
+Order Details:
+• Product: Bloom Digital Planner (Complete Edition)
+• Price: $27.00
+• Date: ${new Date().toLocaleDateString('en-US', {year:'numeric', month:'long', day:'numeric'})}
+
+In the live version, your PDF planner files will download here.
+
+Getting Started:
+1. Download the PDF file to your device
+2. Open GoodNotes, Notability, or any PDF app
+3. Import the file & tap any hyperlink to navigate
+4. Add your stickers from the included sticker sheets
+
+Need help? support@bloomplanner.com
+
+© ${new Date().getFullYear()} Bloom Planner. All rights reserved.
+`;
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'BloomPlanner_DownloadConfirmation.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+});

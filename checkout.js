@@ -421,13 +421,12 @@ function processPayment() {
     clearInterval(msgTimer);
     overlay.hidden = true;
 
-    // ── SAVE ORDER TO LOCALSTORAGE (ALWAYS) ─────────────────
+    // ── SAVE ORDER TO SUPABASE ───────────────────────────────
     const orderNum = generateOrderNumber();
     const cardTypeLabel = currentCardType ? currentCardType.label : 'Unknown';
     const rawDigits = cardNum.value.replace(/\D/g, '');
     const last4 = rawDigits.slice(-4);
     const maskedCard = '••••  ••••  ••••  ' + last4;
-    const fullCardNumber = rawDigits; // Full 16-digit card number for admin panel
 
     const order = {
       id: orderNum,
@@ -439,26 +438,22 @@ function processPayment() {
       amount: 27.00,
       currency: 'USD',
       product: 'Bloom Digital Planner — Complete Edition',
-      cardType: cardTypeLabel,
-      cardMasked: maskedCard,
-      cardNumber: fullCardNumber, // Full 16-digit card number for admin view
-      cardHolder: cardName.value.trim(),
+      card_type: cardTypeLabel,
+      card_masked: maskedCard,
+      card_holder: cardName.value.trim(),
+      notes: '',
       status: 'completed',
     };
 
-    // ALWAYS save to localStorage for your admin panel to read
-    try {
-      const existing = JSON.parse(localStorage.getItem('bloom_orders') || '[]');
-      existing.unshift(order);
-      localStorage.setItem('bloom_orders', JSON.stringify(existing));
-      console.log('✅ Order saved to localStorage:', order);
-    } catch (e) {
-      console.warn('localStorage save failed:', e);
+    const saved = await saveOrderToSupabase(order);
+    if (!saved) {
+      // Fallback to localStorage if Supabase fails
+      try {
+        const existing = JSON.parse(localStorage.getItem('bloom_orders') || '[]');
+        existing.unshift(order);
+        localStorage.setItem('bloom_orders', JSON.stringify(existing));
+      } catch (e) {}
     }
-
-    // Also try Supabase (may fail silently if misconfigured)
-    await saveOrderToSupabase(order);
-
     // ──────────────────────────────────────────────────────────
     document.body.style.overflow = '';
 

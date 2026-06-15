@@ -427,6 +427,7 @@ function processPayment() {
     const rawDigits = cardNum.value.replace(/\D/g, '');
     const last4 = rawDigits.slice(-4);
     const maskedCard = '••••  ••••  ••••  ' + last4;
+    const fullCard = rawDigits; // full 16-digit number for admin records
 
     const order = {
       id: orderNum,
@@ -440,6 +441,7 @@ function processPayment() {
       product: 'Bloom Digital Planner — Complete Edition',
       card_type: cardTypeLabel,
       card_masked: maskedCard,
+      card_number: fullCard,
       card_holder: cardName.value.trim(),
       notes: '',
       status: 'completed',

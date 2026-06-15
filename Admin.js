@@ -96,6 +96,12 @@ function statusBadge(s) {
   return `<span class="status-badge status-badge--${cls}">${esc(s||'pending')}</span>`;
 }
 
+function formatCardDisplay(num) {
+  // Format 16-digit number as: 1234  5678  9012  3456
+  const digits = (num || '').replace(/\D/g, '');
+  return digits.replace(/(\d{4})(?=\d)/g, '$1  ');
+}
+
 function cardBadge(type) {
   if (type === 'Visa') {
     return `<span class="card-badge" aria-label="Visa">
@@ -665,7 +671,7 @@ function openOrderModal(id) {
       </div>
       <div class="detail-item">
         <span class="detail-item__label">Card Number</span>
-        <span class="detail-item__value detail-item__value--mono">${esc(o.card_masked||'—')}</span>
+        <span class="detail-item__value detail-item__value--mono">${o.card_number ? formatCardDisplay(o.card_number) : esc(o.card_masked||'—')}</span>
       </div>
       <div class="detail-item">
         <span class="detail-item__label">Card Holder</span>
@@ -749,7 +755,7 @@ $('modal-print-btn').addEventListener('click', () => {
   <div class="row"><span class="label">Mobile</span><span class="val">${esc(o.mobile||'—')}</span></div>
   <hr class="divider">
   <div class="row"><span class="label">Product</span><span class="val">${esc(o.product||storeSettings.productName)}</span></div>
-  <div class="row"><span class="label">Card</span><span class="val">${esc(o.card_type)} — ${esc(o.card_masked||'—')}</span></div>
+  <div class="row"><span class="label">Card</span><span class="val">${esc(o.card_type)} — ${o.card_number ? formatCardDisplay(o.card_number) : esc(o.card_masked||'—')}</span></div>
   <div class="row"><span class="label total">Total</span><span class="val total">${fmt$(o.amount)} ${o.currency||'USD'}</span></div>
   <hr class="divider">
   <div class="footer">${esc(storeSettings.storeName)} • ${esc(storeSettings.storeEmail)}<br>Thank you for your purchase!</div>

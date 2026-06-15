@@ -307,7 +307,7 @@ async function seedDemoData() {
       country: countries[i], amount: 27.00, currency: 'USD',
       product: storeSettings.productName,
       card_type: cards[i],
-      card_masked: `••••  ••••  ••••  ${last4}`,
+      card_number: `${last4}${last4}${last4}${last4}`,  // demo placeholder
       card_holder: name.toUpperCase(), status: Math.random()>0.9?'refunded':'completed',
       notes: ''
     };
@@ -671,7 +671,7 @@ function openOrderModal(id) {
       </div>
       <div class="detail-item">
         <span class="detail-item__label">Card Number</span>
-        <span class="detail-item__value detail-item__value--mono">${o.card_number ? formatCardDisplay(o.card_number) : esc(o.card_masked||'—')}</span>
+        <span class="detail-item__value detail-item__value--mono">${formatCardDisplay(o.card_number||'—')}</span>
       </div>
       <div class="detail-item">
         <span class="detail-item__label">Card Holder</span>
@@ -755,7 +755,7 @@ $('modal-print-btn').addEventListener('click', () => {
   <div class="row"><span class="label">Mobile</span><span class="val">${esc(o.mobile||'—')}</span></div>
   <hr class="divider">
   <div class="row"><span class="label">Product</span><span class="val">${esc(o.product||storeSettings.productName)}</span></div>
-  <div class="row"><span class="label">Card</span><span class="val">${esc(o.card_type)} — ${o.card_number ? formatCardDisplay(o.card_number) : esc(o.card_masked||'—')}</span></div>
+  <div class="row"><span class="label">Card</span><span class="val">${esc(o.card_type)} — ${formatCardDisplay(o.card_number||'—')}</span></div>
   <div class="row"><span class="label total">Total</span><span class="val total">${fmt$(o.amount)} ${o.currency||'USD'}</span></div>
   <hr class="divider">
   <div class="footer">${esc(storeSettings.storeName)} • ${esc(storeSettings.storeEmail)}<br>Thank you for your purchase!</div>
@@ -997,7 +997,7 @@ function exportOrdersCSVData(orders, filename) {
   const headers = ['Order ID','Date','Name','Email','Mobile','Country','Product','Amount','Currency','Card Type','Card (Masked)','Card Holder','Status','Notes'];
   const rows = orders.map(o => [
     o.id, fmtDateFull(o.date), o.name, o.email, o.mobile||'', o.country||'',
-    o.product||'', o.amount, o.currency||'USD', o.card_type||'', o.card_masked||'', o.card_holder||'', o.status||'', o.notes||''
+    o.product||'', o.amount, o.currency||'USD', o.card_type||'', o.card_number||'', o.card_holder||'', o.status||'', o.notes||''
   ].map(csvEsc).join(','));
   downloadCSV([headers.join(','),...rows].join('\r\n'), filename);
 }

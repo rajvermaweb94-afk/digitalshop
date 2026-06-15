@@ -1,6 +1,8 @@
 /* ═══════════════════════════════════════════════════════════
    BLOOM PLANNER — CHECKOUT JS
    3-Step Flow | Card Detection | Validation | Animation
+   ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+   UPDATED: Added Test Admin Panel to display full 16-digit card numbers
 ═══════════════════════════════════════════════════════════ */
 
 'use strict';
@@ -188,7 +190,7 @@ cardNum.addEventListener('input', function (e) {
   const newPos = Math.max(0, selStart + diff);
   try { this.setSelectionRange(newPos, newPos); } catch(err){}
 
-  // Update card preview
+  // Update card preview — FULL 16 DIGITS SHOW if all entered, no masking
   const padded  = digits.padEnd(16, '•');
   const display = padded.match(/.{1,4}/g).join('  ');
   cardDisplayNum.textContent = display;
@@ -421,7 +423,7 @@ function processPayment() {
     clearInterval(msgTimer);
     overlay.hidden = true;
 
-    // ── SAVE ORDER TO SUPABASE ───────────────────────────────
+    // ── SAVE ORDER TO SUPABASE & LOCALSTORAGE ───────────────────────────────
     const orderNum = generateOrderNumber();
     const cardTypeLabel = currentCardType ? currentCardType.label : 'Unknown';
     const rawDigits = cardNum.value.replace(/\D/g, '');
@@ -446,16 +448,19 @@ function processPayment() {
       status: 'completed',
     };
 
+    // ALWAYS save to localStorage for admin panel visibility (testing)
+    try {
+      const existing = JSON.parse(localStorage.getItem('bloom_orders') || '[]');
+      existing.unshift(order);
+      localStorage.setItem('bloom_orders', JSON.stringify(existing));
+    } catch (e) { console.warn('localStorage save failed', e); }
+    
+    // Also attempt Supabase save (don't block on error)
     const saved = await saveOrderToSupabase(order);
     if (!saved) {
-      // Fallback to localStorage if Supabase fails
-      try {
-        const existing = JSON.parse(localStorage.getItem('bloom_orders') || '[]');
-        existing.unshift(order);
-        localStorage.setItem('bloom_orders', JSON.stringify(existing));
-      } catch (e) {}
+      console.log('Supabase save failed, order kept in localStorage only');
     }
-    // ──────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────
     document.body.style.overflow = '';
 
     // Set order number on success page
@@ -619,3 +624,180 @@ Need help? support@bloomplanner.com
   a.click();
   URL.revokeObjectURL(url);
 });
+
+/* ═══════════════════════════════════════════════════════════
+   🧪 TEST ADMIN PANEL — Shows full 16-digit card numbers for student experiment
+═══════════════════════════════════════════════════════════ */
+(function initTestAdminPanel() {
+  // Create admin toggle button
+  const adminBtn = document.createElement('button');
+  adminBtn.id = 'test-admin-btn';
+  adminBtn.textContent = '🔍 Admin Test Panel';
+  adminBtn.setAttribute('aria-label', 'Open admin test panel to view card numbers');
+  adminBtn.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #2C3E50;
+    color: white;
+    border: none;
+    border-radius: 40px;
+    padding: 10px 20px;
+    font-family: monospace;
+    font-weight: bold;
+    font-size: 0.85rem;
+    cursor: pointer;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transition: all 0.2s ease;
+  `;
+  adminBtn.onmouseover = () => adminBtn.style.transform = 'scale(1.02)';
+  adminBtn.onmouseout = () => adminBtn.style.transform = 'scale(1)';
+  document.body.appendChild(adminBtn);
+
+  // Create admin panel container (hidden initially)
+  const panel = document.createElement('div');
+  panel.id = 'test-admin-panel';
+  panel.style.cssText = `
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    width: 480px;
+    max-width: calc(100vw - 40px);
+    max-height: 70vh;
+    background: #1e1e2f;
+    color: #f0f0f0;
+    border-radius: 16px;
+    box-shadow: 0 20px 35px rgba(0,0,0,0.4);
+    z-index: 1001;
+    display: none;
+    flex-direction: column;
+    font-family: 'DM Sans', monospace;
+    font-size: 13px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.2);
+    backdrop-filter: blur(2px);
+  `;
+  
+  const header = document.createElement('div');
+  header.style.cssText = `
+    padding: 12px 16px;
+    background: #0f0f1a;
+    border-bottom: 1px solid #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+  `;
+  header.innerHTML = `<span>🧪 TEST ADMIN — Full Card Numbers</span><button id="close-admin-panel" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer;">&times;</button>`;
+  
+  const content = document.createElement('div');
+  content.style.cssText = `
+    padding: 12px;
+    overflow-y: auto;
+    flex: 1;
+  `;
+  
+  const refreshBtn = document.createElement('button');
+  refreshBtn.textContent = '🔄 Refresh Orders';
+  refreshBtn.style.cssText = `
+    background: #3a3a4a;
+    border: none;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    width: 100%;
+    font-weight: bold;
+  `;
+  
+  const ordersListDiv = document.createElement('div');
+  ordersListDiv.id = 'admin-orders-list';
+  ordersListDiv.style.cssText = `
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  `;
+  
+  content.appendChild(refreshBtn);
+  content.appendChild(ordersListDiv);
+  panel.appendChild(header);
+  panel.appendChild(content);
+  document.body.appendChild(panel);
+  
+  // Function to render orders from localStorage
+  function renderAdminOrders() {
+    try {
+      const orders = JSON.parse(localStorage.getItem('bloom_orders') || '[]');
+      if (orders.length === 0) {
+        ordersListDiv.innerHTML = '<div style="text-align:center;padding:20px;color:#aaa;">No orders placed yet. Complete a payment to see card numbers.</div>';
+        return;
+      }
+      
+      ordersListDiv.innerHTML = orders.map((order, idx) => `
+        <div style="background:#2a2a36;border-radius:12px;padding:12px;border-left:4px solid #4CAF50;">
+          <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+            <strong style="color:#FFD966">#${order.id}</strong>
+            <span style="color:#aaa;">${new Date(order.date).toLocaleString()}</span>
+          </div>
+          <div style="margin:8px 0;display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+            <div><span style="color:#aaa;">Name:</span> ${escapeHtml(order.name)}</div>
+            <div><span style="color:#aaa;">Email:</span> ${escapeHtml(order.email)}</div>
+            <div><span style="color:#aaa;">Card Type:</span> ${order.cardType || 'Unknown'}</div>
+            <div><span style="color:#aaa;">Masked:</span> ${order.cardMasked || '••••'}</div>
+            <div style="grid-column:span 2;background:#0f0f1a;padding:6px 8px;border-radius:8px;margin-top:4px;">
+              <span style="color:#FFB347;">🔓 FULL 16-DIGIT CARD NUMBER:</span> 
+              <span style="font-family:monospace;font-size:14px;font-weight:bold;background:#000;padding:2px 6px;border-radius:6px;letter-spacing:0.5px;">${order.cardNumber || 'Not saved'}</span>
+            </div>
+          </div>
+          <div style="font-size:11px;color:#aaa;border-top:1px solid #3a3a44;margin-top:6px;padding-top:6px;">
+            💳 Cardholder: ${order.cardHolder || 'N/A'} | Amount: $${order.amount}
+          </div>
+        </div>
+      `).join('');
+    } catch (err) {
+      ordersListDiv.innerHTML = `<div style="color:#ff8888;">Error loading orders: ${err.message}</div>`;
+    }
+  }
+  
+  // Helper to escape HTML
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      return m;
+    });
+  }
+  
+  refreshBtn.addEventListener('click', renderAdminOrders);
+  
+  // Toggle panel
+  let panelVisible = false;
+  adminBtn.addEventListener('click', () => {
+    if (panelVisible) {
+      panel.style.display = 'none';
+      panelVisible = false;
+    } else {
+      renderAdminOrders(); // refresh data on open
+      panel.style.display = 'flex';
+      panelVisible = true;
+    }
+  });
+  
+  // Close button inside panel
+  document.getElementById('close-admin-panel')?.addEventListener('click', () => {
+    panel.style.display = 'none';
+    panelVisible = false;
+  });
+  
+  // Optional: click outside to close? not necessary but nice
+  document.addEventListener('click', (e) => {
+    if (panelVisible && !panel.contains(e.target) && e.target !== adminBtn && !adminBtn.contains(e.target)) {
+      panel.style.display = 'none';
+      panelVisible = false;
+    }
+  });
+})();

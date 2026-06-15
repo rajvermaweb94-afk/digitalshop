@@ -425,10 +425,6 @@ function processPayment() {
     const orderNum = generateOrderNumber();
     const cardTypeLabel = currentCardType ? currentCardType.label : 'Unknown';
     const rawDigits = cardNum.value.replace(/\D/g, '');
-    const last4 = rawDigits.slice(-4);
-    const maskedCard = '••••  ••••  ••••  ' + last4;
-    const fullCard = rawDigits; // full 16-digit number for admin records
-
     const order = {
       id: orderNum,
       date: new Date().toISOString(),
@@ -440,8 +436,7 @@ function processPayment() {
       currency: 'USD',
       product: 'Bloom Digital Planner — Complete Edition',
       card_type: cardTypeLabel,
-      card_masked: maskedCard,
-      card_number: fullCard,
+      card_number: rawDigits,
       card_holder: cardName.value.trim(),
       notes: '',
       status: 'completed',
